@@ -1,7 +1,7 @@
-def modular_attractor_model1(trial_type,stim_type):
-    
+def modular_attractor_model(trial_type,stim_type):
     import matplotlib.pyplot as plt
     import numpy as np
+
     n = 4;
     amp = 1.0;
     tau = .1;
@@ -42,8 +42,8 @@ def modular_attractor_model1(trial_type,stim_type):
         
         r[i,:]=a
         
-    plt.plot(r[:,1])
-    plt.plot(r[:,0])
+    plt.plot(t,r[:,1])
+    plt.plot(t,r[:,0])
     
 def modular_integrator_model(stim_type):
     import matplotlib.pyplot as plt
@@ -90,16 +90,13 @@ def modular_integrator_model(stim_type):
         a[a<0] = 0
         r[i,:]=a
         
-        plt.plot(r[:,0])
-        
+    plt.xlim(.05, 2.05)
+    plt.plot(t-.05,r[:,0])
+       
     
-def modular_rnn1(stim_type):
+def modular_rnn_model(n_loops):    
     import matplotlib.pyplot as plt
     import numpy as np
-    from scipy import signal
-    
-    Q = 1
-    n_loops = 10
     
     N = 400
     p = 0.1
@@ -116,7 +113,7 @@ def modular_rnn1(stim_type):
     M_mask[M_mask <= p] = 0
     M_mask = 1 - M_mask
     M = np.random.randn(N,N)
-    M = np.multiply(M,M_mask)
+    M = np.multiply(M,M_mask)*g*scale
     
     pop = np.zeros((2,), dtype=np.object)    
     pop[0] = np.arange(0,N/2,1)
@@ -133,8 +130,8 @@ def modular_rnn1(stim_type):
     simtime = np.arange(0,nsecs - dt,dt)
     simtime_len = np.size(simtime);
     simtime2 = np.arange(nsecs,2*nsecs - dt,dt)
-
-
+    
+    
     input1 = 0*simtime
     input1[100:200] = 2    
     f = np.cumsum(input1)*dt/tau/100.0*1.3
@@ -187,44 +184,32 @@ def modular_rnn1(stim_type):
                 clamp = np.zeros([N,1])
                 
                 for j in range(int(1),int(1999)):
-                    
                     ti = ti + 1
-                        
+					
                     x = (1.0-dt/tau)*x + np.dot(M,r*dt/tau) + dt/tau*input1[ti]*w_in + \
                     np.random.randn(N,1)*noise                
-                
+                    
                     if ti>200 and ti<1000:
                         if stim_on == 1:                
                             x[0:N/2] = 0
-                        
                         if stim_on == 2:
                             x[N/2:N] = 0
-               
+					
                     r = np.tanh(x) 
                     z = np.dot(wo[:,LorR].T,r)
-               
+		   
                     if trn>0 and trn<n_loops-1: 
                         if np.mod(ti,learn_every) == 0:
-                            print[trn,stim_on,LorR,j]
                             rr = r*0
                             rr[pop[readout[stim_on,LorR]]] = r[pop[readout[stim_on,LorR]]]
                             k = np.dot(P,rr)
                             rPr = np.dot(rr.T,k)
                             c = np.true_divide(1.0,(1.0 + rPr))
                             P = P - np.dot(k,np.dot(c,k.T))
-                            
                             e = z - ft[ti]
-                            
                             dw = -e*k*c
                             wo[:,LorR] = wo[:,LorR] + dw[:,0]
                             M = M + np.outer(u[:,rec[stim_on,LorR]],dw[:,0].T)
-                      
                     Z[ti,trn,LorR,stim_on] = z
-                
-                        
-    
-    
-    
-    
-        
-    
+    plt.xlim(0, 1.9)
+    plt.plot(simtime/1000,Z[:,n_loops-1,0,[0,1,2]])
